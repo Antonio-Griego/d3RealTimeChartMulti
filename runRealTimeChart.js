@@ -11,49 +11,46 @@ let chart = realTimeChartMulti()
     .height(350);
 
 // invoke the chart
-let chartDiv = d3.select("#viewDiv").append("div")
-    .attr("id", "chartDiv")
-    .call(chart);
+d3.select("#viewDiv").append("div").attr("id", "chartDiv").call(chart);
 
 // alternative and equivalent invocation
 //chart(chartDiv);
 
 // event handler for debug checkbox
 d3.select("#debug").on("change", function() {
-    var state = d3.select(this).property("checked");
+    let state = d3.select(this).property("checked");
     chart.debug(state);
 });
 
 // event handler for halt checkbox
 d3.select("#halt").on("change", function() {
-    var state = d3.select(this).property("checked");
+    let state = d3.select(this).property("checked");
     chart.halt(state);
 });
-
 
 // configure the data generator
 
 // mean and deviation for generation of time intervals
-var tX = 5; // time constant, multiple of one second
-var meanMs = 1000 * tX, // milliseconds
+const tX = 5; // time constant, multiple of one second
+let meanMs = 1000 * tX, // milliseconds
     dev = 200 * tX; // std dev
 
 // define time scale
-var timeScale = d3.scale.linear()
+let timeScale = d3.scale.linear()
     .domain([300 * tX, 1700 * tX])
     .range([300 * tX, 1700 * tX])
     .clamp(true);
 
 // define function that returns normally distributed random numbers
-var normal = d3.random.normal(meanMs, dev);
+let normal = d3.random.normal(meanMs, dev);
 
 // define color scale
-var color = d3.scale.category10();
+let color = d3.scale.category10();
 
 // in a normal use case, real time data would arrive through the network or some other mechanism
-var d = -1;
-var shapes = ["rect", "circle"];
-var timeout = 0;
+let d = -1;
+let shapes = ["rect", "circle"];
+let timeout = 0;
 
 // define data generator
 function dataGenerator() {
@@ -76,11 +73,11 @@ function dataGenerator() {
         chart.yDomain().forEach(function(cat, i) {
 
             // create randomized timestamp for this category data item
-            var now = new Date(new Date().getTime() + i * (Math.random() - 0.5) * 1000);
+            let now = new Date(new Date().getTime() + i * (Math.random() - 0.5) * 1000);
 
             // create new data item
-            var obj;
-            var doSimple = false;
+            let obj;
+            let doSimple = false;
             if (doSimple) {
                 obj = {
                     // simple data item (simple black circle of constant size)
@@ -99,8 +96,8 @@ function dataGenerator() {
                     color: color(d % 10),
                     opacity: Math.max(Math.random(), 0.3),
                     category: "Category" + (i + 1),
-                    //type: shapes[Math.round(Math.random() * (shapes.length - 1))], // the module currently doesn't support dynamically changed svg types (need to add key function to data, or method to dynamically replace svg object – tbd)
-                    type: "circle",
+                    type: shapes[Math.round(Math.random() * (shapes.length - 1))], // the module currently doesn't support dynamically changed svg types (need to add key function to data, or method to dynamically replace svg object – tbd)
+                    //type: "circle",
                     size: Math.max(Math.round(Math.random() * 12), 4),
                 };
             }
