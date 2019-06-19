@@ -1,7 +1,7 @@
 'use strict';
 
 // create the real time chart
-let chart = realTimeChartMulti()
+let chart = initRealTimeChart()
     .title("Chart Title")
     .yTitle("Categories")
     .xTitle("Time")

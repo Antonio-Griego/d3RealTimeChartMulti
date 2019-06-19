@@ -1,6 +1,6 @@
 'use strict';
 
-function realTimeChartMulti() {
+function initRealTimeChart() {
 
   let version = "0.1.0",
       datum, data,
