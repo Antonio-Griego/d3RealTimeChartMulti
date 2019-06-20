@@ -2,23 +2,29 @@
 
 function initRealTimeChart() {
 
-  let version = "0.1.0",
-      datum, data,
-      maxSeconds = 300, pixelsPerSecond = 10,
-      svgWidth = 700, svgHeight = 300,
+      // individual data point appended to the data array
+  let datum,
+
+      // the array of data displayed on the chart
+      data,
+
+      // the total time displayed on the chart (default = 300)
+      maxSeconds = 300,
+
+      // the width in pixels representing 1 second (default = 10)
+      pixelsPerSecond = 10,
+
+      // used to store the width and height of the chart in pixels
+      // these values are set when the chart is created
+      svgWidth,
+      svgHeight,
+
       margin = { top: 20, bottom: 20, left: 100, right: 30, topNav: 10, bottomNav: 20 },
-      dimension = { chartTitle: 20, xAxis: 20, yAxis: 20, xTitle: 20, yTitle: 20, navChart: 70 },
-      // maxY = 100, minY = 0,
-      chartTitle, yTitle, xTitle,
-      drawXAxis = true,
-      // drawYAxis = true,
-      drawNavChart = true,
-      border,
-      selection,
+      dimension = { chartTitle: 20, xAxis: 30, yAxis: 20, xTitle: 20, yTitle: 20, navChart: 70 },
+
       barId = 0,
       yDomain = [],
       debug = false,
-      // barWidth = 5,
       halted = false,
       x, y,
       xNav, yNav,
@@ -29,42 +35,24 @@ function initRealTimeChart() {
       svg;
 
   // create the chart
-  let chart = function(s) {
-    selection = s;
-    if (selection === undefined) {
-      console.error("selection is undefined");
-      return;
-    }
-
-    // process titles
-    chartTitle = chartTitle || "";
-    xTitle = xTitle || "";
-    yTitle = yTitle || "";
-
-    // compute component dimensions
-    let chartTitleDim = chartTitle === "" ? 0 : dimension.chartTitle,
-        xTitleDim = xTitle === "" ? 0 : dimension.xTitle,
-        // yTitleDim = yTitle === "" ? 0 : dimension.yTitle,
-        xAxisDim = !drawXAxis ? 0 : dimension.xAxis,
-        // yAxisDim = !drawYAxis ? 0 : dimension.yAxis,
-        navChartDim = !drawNavChart ? 0 : dimension.navChart;
+  let chart = function() {
 
     // compute dimension of main and nav charts, and offsets
-    let marginTop = margin.top + chartTitleDim;
-    height = svgHeight - marginTop - margin.bottom - chartTitleDim - xTitleDim - xAxisDim - navChartDim + 30;
-    heightNav = navChartDim - margin.topNav - margin.bottomNav;
+    let marginTop = margin.top;
+    height = svgHeight - marginTop - margin.bottom - dimension.xAxis - dimension.navChart + 30;
+    heightNav = dimension.navChart - margin.topNav - margin.bottomNav;
     let marginTopNav = svgHeight - margin.bottom - heightNav - margin.topNav;
     width = svgWidth - margin.left - margin.right;
     widthNav = width;
 
     // append the svg
-    svg = selection.append("svg")
-        .attr("width", svgWidth)
-        .attr("height", svgHeight)
-        .style("border", function() {
-          if (border) return "1px solid lightgray"; 
-          else return null;
-        });
+    svg = d3.select("#viewDiv")
+        .append("div")
+        .attr("id", "chartDiv")
+            .append("svg")
+            .attr("width", svgWidth)
+            .attr("height", svgHeight)
+            .style("border", null);
 
     // create main group and translate
     let main = svg.append("g")
@@ -105,43 +93,6 @@ function initRealTimeChart() {
     // add group for y axis
     yAxisG = main.append("g")
         .attr("class", "y axis");
-
-    // in x axis group, add x axis title
-    xAxisG.append("text")
-        .attr("class", "title")
-        .attr("x", width / 2)
-        .attr("y", 25)
-        .attr("dy", ".71em")
-        .text(function() {
-          // let text = xTitle === undefined ? "" : xTitle;
-          // return text;
-          return (xTitle === undefined ? "" : xTitle);
-        });
-
-    // in y axis group, add y axis title
-    yAxisG.append("text")
-        .attr("class", "title")
-        .attr("transform", "rotate(-90)")
-        .attr("x", - height / 2)
-        .attr("y", -margin.left + 15) //-35
-        .attr("dy", ".71em")
-        .text(function() {
-          // let text = yTitle === undefined ? "" : yTitle;
-          // return text;
-          return (yTitle === undefined ? "" : yTitle);
-        });
-
-    // in main group, add chart title
-    main.append("text")
-        .attr("class", "chartTitle")
-        .attr("x", width / 2)
-        .attr("y", -20)
-        .attr("dy", ".71em")
-        .text(function() {
-          // let text = chartTitle === undefined ? "" : chartTitle;
-          // return text;
-          return (chartTitle === undefined ? "" : chartTitle);
-        });
 
     // define main chart scales
     x = d3.time.scale().range([0, width]);
@@ -288,13 +239,11 @@ function initRealTimeChart() {
             if (debug) { console.log("d", JSON.stringify(d)); }
             if (d.type === undefined) console.error(JSON.stringify(d));
             let type = d.type || "circle";
-            // let node = document.createElementNS("http://www.w3.org/2000/svg", type);
-            // return node;
             return (document.createElementNS("http://www.w3.org/2000/svg", type));
           })
           .attr("class", "bar")
-          .attr("id", function() { 
-            return "bar-" + barId++; 
+          .attr("id", function() {
+            return "bar-" + barId++;
           });
 
       // update items; added items are now part of the update selection
@@ -302,51 +251,29 @@ function initRealTimeChart() {
           .attr("x", function(d) { 
             let retVal = null;
             if (getTagName(this) === "rect") {
-              let size = d.size || 6;
-              retVal = Math.round(x(d.time) - size / 2);
+              retVal = Math.round(x(d.time));
             }
             return retVal; 
           })
           .attr("y", function(d) { 
             let retVal = null;
             if (getTagName(this) === "rect") {
-              let size = d.size || 6;
-              retVal = y(d.category) - size / 2;
+              retVal = y(d.category) - d.size;
             }
             return retVal; 
           })
-          .attr("cx", function(d) { 
-            let retVal = null;
-            if (getTagName(this) === "circle") {
-              retVal = Math.round(x(d.time));
-            }
-            return retVal; 
-          })
-          .attr("cy", function(d) { 
-            let retVal = null;
-            if (getTagName(this) === "circle") {
-              retVal = y(d.category);
-            }
-            return retVal; 
-          })
-          .attr("r", function(d) { 
-            let retVal = null;
-            if (getTagName(this) === "circle") {
-              retVal = d.size / 2;
-            }
-            return retVal; 
-          })
-          .attr("width", function(d) {
+          .attr("width", function() { // function(d) {
             let retVal = null;
             if (getTagName(this) === "rect") {
-              retVal = d.size;
+              retVal = 25; // d.size;
             }
             return retVal; 
           })
           .attr("height", function(d) { 
             let retVal = null;
             if (getTagName(this) === "rect") {
-              retVal = d.size;
+              // retVal = height - d.size;
+              retVal = svgHeight - d.size;
             }
             return retVal; 
           })
@@ -449,34 +376,6 @@ function initRealTimeChart() {
     return chart;
   };
 
-  // svg border
-  chart.border = function(_) {
-    if (arguments.length === 0) return border;
-    border = _;
-    return chart;       
-  };
-
-  // chart title
-  chart.title = function(_) {
-    if (arguments.length === 0) return chartTitle;
-    chartTitle = _;
-    return chart;   
-  };
-
-  // x axis title
-  chart.xTitle = function(_) {
-    if (arguments.length === 0) return xTitle;
-    xTitle = _;
-    return chart;       
-  };
-
-  // y axis title
-  chart.yTitle = function(_) {
-    if (arguments.length === 0) return yTitle;
-    yTitle = _;
-    return chart;       
-  };
-
   // yItems (can be dynamically added after chart construction)
   chart.yDomain = function(_) {
     if (arguments.length === 0) return yDomain;
@@ -506,9 +405,5 @@ function initRealTimeChart() {
     return chart;       
   };
 
-  // version
-  chart.version = version;
-  
   return chart;
-
-} // end realTimeChart function
+}
