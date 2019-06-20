@@ -2,19 +2,12 @@
 
 // create the real time chart
 let chart = initRealTimeChart()
-    .title("Chart Title")
-    .yTitle("Categories")
-    .xTitle("Time")
     .yDomain(["Category1"]) // initial y domain (note array)
-    .border(true)
     .width(900)
     .height(350);
 
 // invoke the chart
 d3.select("#viewDiv").append("div").attr("id", "chartDiv").call(chart);
-
-// alternative and equivalent invocation
-//chart(chartDiv);
 
 // event handler for debug checkbox
 d3.select("#debug").on("change", function() {
@@ -48,9 +41,7 @@ let normal = d3.random.normal(meanMs, dev);
 let color = d3.scale.category10();
 
 // in a normal use case, real time data would arrive through the network or some other mechanism
-let d = -1;
-let shapes = ["rect", "circle"];
-let timeout = 0;
+let timeout = 5000;
 
 // define data generator
 function dataGenerator() {
@@ -58,6 +49,7 @@ function dataGenerator() {
     setTimeout(function() {
 
         // add categories dynamically
+        /*
         d++;
         switch (d) {
             case 5:
@@ -68,6 +60,7 @@ function dataGenerator() {
                 break;
             default:
         }
+        */
 
         // output a sample for each category, each interval (five seconds)
         chart.yDomain().forEach(function(cat, i) {
@@ -76,39 +69,23 @@ function dataGenerator() {
             let now = new Date(new Date().getTime() + i * (Math.random() - 0.5) * 1000);
 
             // create new data item
-            let obj;
-            let doSimple = false;
-            if (doSimple) {
-                obj = {
-                    // simple data item (simple black circle of constant size)
-                    time: now,
-                    color: "black",
-                    opacity: 1,
-                    category: "Category" + (i + 1),
-                    type: "circle",
-                    size: 5,
-                };
+            let obj = {
+                // complex data item; four attributes (type, color, opacity and size) are changing dynamically with each iteration (as an example)
+                time: now,
+                // color: color(d % 10),
+                color: color(3),
+                opacity: 0.0,
+                category: "Category" + (i + 1),
+                //type: shapes[Math.round(Math.random() * (shapes.length - 1))], // the module currently doesn't support dynamically changed svg types (need to add key function to data, or method to dynamically replace svg object – tbd)
+                type: "rect",
+                size: Math.ceil(10 + (90 * Math.random()))
+            };
 
-            } else {
-                obj = {
-                    // complex data item; four attributes (type, color, opacity and size) are changing dynamically with each iteration (as an example)
-                    time: now,
-                    color: color(d % 10),
-                    opacity: Math.max(Math.random(), 0.3),
-                    category: "Category" + (i + 1),
-                    type: shapes[Math.round(Math.random() * (shapes.length - 1))], // the module currently doesn't support dynamically changed svg types (need to add key function to data, or method to dynamically replace svg object – tbd)
-                    //type: "circle",
-                    size: Math.max(Math.round(Math.random() * 12), 4),
-                };
-            }
+            //console.log(obj.size);
 
             // send the datum to the chart
             chart.datum(obj);
         });
-
-        // drive data into the chart at average interval of five seconds
-        // here, set the timeout to roughly five seconds
-        timeout = Math.round(timeScale(normal()));
 
         // do forever
         dataGenerator();
