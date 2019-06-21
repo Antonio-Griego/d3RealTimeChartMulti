@@ -2,34 +2,36 @@
 
 function initRealTimeChart() {
 
+  // used to store the width and height of the total chart space in pixels
+  const svgWidth = 600;
+  const svgHeight = 400;
+
+  // the total time displayed on the chart (default = 300)
+  const maxSeconds = 60;
+
+  // the width in pixels representing 1 second (default = 10)
+  const pixelsPerSecond = 50;
+
+  // the color of the bars displayed in the chart (category 10, color 3 === blue)
+  const barColor = d3.scale.category10()(3);
+
       // individual data point appended to the data array
   let datum,
 
       // the array of data displayed on the chart
       data,
 
-      // the total time displayed on the chart (default = 300)
-      maxSeconds = 300,
+      margin = { top: 10, bottom: 10, left: 30, right: 30, topNav: 10, bottomNav: 40 },
+      dimension = { xAxis: 20, yAxis: 20, navChart: 100 },
 
-      // the width in pixels representing 1 second (default = 10)
-      pixelsPerSecond = 10,
-
-      // used to store the width and height of the chart in pixels
-      // these values are set when the chart is created
-      svgWidth,
-      svgHeight,
-
-      margin = { top: 20, bottom: 20, left: 100, right: 30, topNav: 10, bottomNav: 20 },
-      dimension = { chartTitle: 20, xAxis: 30, yAxis: 20, xTitle: 20, yTitle: 20, navChart: 70 },
-
-      barId = 0,
-      yDomain = [],
       debug = false,
       halted = false,
+
       x, y,
       xNav, yNav,
       width, height,
       widthNav, heightNav,
+
       xAxisG, yAxisG,
       xAxis, yAxis,
       svg;
@@ -38,8 +40,7 @@ function initRealTimeChart() {
   let chart = function() {
 
     // compute dimension of main and nav charts, and offsets
-    let marginTop = margin.top;
-    height = svgHeight - marginTop - margin.bottom - dimension.xAxis - dimension.navChart + 30;
+    height = svgHeight - margin.top - margin.bottom - dimension.xAxis - dimension.navChart + 25;
     heightNav = dimension.navChart - margin.topNav - margin.bottomNav;
     let marginTopNav = svgHeight - margin.bottom - heightNav - margin.topNav;
     width = svgWidth - margin.left - margin.right;
@@ -51,12 +52,11 @@ function initRealTimeChart() {
         .attr("id", "chartDiv")
             .append("svg")
             .attr("width", svgWidth)
-            .attr("height", svgHeight)
-            .style("border", null);
+            .attr("height", svgHeight);
 
     // create main group and translate
     let main = svg.append("g")
-        .attr("transform", "translate (" + margin.left + "," + marginTop + ")");
+        .attr("transform", "translate (" + margin.left + "," + margin.top + ")");
 
     // define clip-path
     main.append("defs").append("clipPath")
@@ -82,7 +82,7 @@ function initRealTimeChart() {
     let barG = main.append("g")
         .attr("class", "barGroup")
         .attr("transform", "translate(0, 0)")
-        .attr("clip-path", "url(#myClip")
+        .attr("clip-path", "url(#myClip)")
       .append("g");
 
     // add group for x axis
@@ -96,7 +96,7 @@ function initRealTimeChart() {
 
     // define main chart scales
     x = d3.time.scale().range([0, width]);
-    y = d3.scale.ordinal().domain(yDomain).rangeRoundPoints([height, 0], 1);
+    y = d3.scale.linear().domain([0, 100]).range([height, 0]);
 
     // define main chart axis
     xAxis = d3.svg.axis().orient("bottom");
@@ -128,7 +128,7 @@ function initRealTimeChart() {
 
     // define nav chart scales
     xNav = d3.time.scale().range([0, widthNav]);
-    yNav = d3.scale.ordinal().domain(yDomain).rangeRoundPoints([heightNav, 0], 1);
+    yNav = d3.scale.linear().domain([0, 100]).range([heightNav, 0]);
 
     // define nav axis
     let xAxisNav = d3.svg.axis().orient("bottom");
@@ -203,16 +203,9 @@ function initRealTimeChart() {
     function refresh() {
 
       // process data to remove too late data items 
-      data = data.filter(function(d) {
-        if (d.time.getTime() > startTime.getTime()) return true;
+      data = data.filter(function(_) {
+        if (_.timestamp.getTime() > startTime.getTime()) return true;
       });
-
-      // determine number of categories
-      let categoryCount = yDomain.length;
-      if (debug) {
-        console.log("yDomain", yDomain);
-        console.log("categoryCount", categoryCount);
-      }
 
       // here we bind the new data to the main chart
       // note: no key function is used here; therefore the data binding is
@@ -227,90 +220,59 @@ function initRealTimeChart() {
       // element, and such DOM element (with data) would be moved left, until
       // the x position is to the left of the chart, where the item would be 
       // exited
-      let updateSel = barG.selectAll(".bar")
-          .data(data);
+      let updateSel = barG.selectAll(".bar").data(data);
 
       // remove items
       updateSel.exit().remove();
 
       // add items
       updateSel.enter()
-          .append(function(d) { 
-            if (debug) { console.log("d", JSON.stringify(d)); }
-            if (d.type === undefined) console.error(JSON.stringify(d));
-            let type = d.type || "circle";
-            return (document.createElementNS("http://www.w3.org/2000/svg", type));
+          .append(function() {
+            return (document.createElementNS("http://www.w3.org/2000/svg", "rect"));
           })
-          .attr("class", "bar")
-          .attr("id", function() {
-            return "bar-" + barId++;
-          });
+          .attr("class", "bar");
 
       // update items; added items are now part of the update selection
       updateSel
-          .attr("x", function(d) { 
-            let retVal = null;
-            if (getTagName(this) === "rect") {
-              retVal = Math.round(x(d.time));
-            }
-            return retVal; 
-          })
-          .attr("y", function(d) { 
-            let retVal = null;
-            if (getTagName(this) === "rect") {
-              retVal = y(d.category) - d.size;
-            }
-            return retVal; 
-          })
-          .attr("width", function() { // function(d) {
-            let retVal = null;
-            if (getTagName(this) === "rect") {
-              retVal = 25; // d.size;
-            }
-            return retVal; 
-          })
-          .attr("height", function(d) { 
-            let retVal = null;
-            if (getTagName(this) === "rect") {
-              // retVal = height - d.size;
-              retVal = svgHeight - d.size;
-            }
-            return retVal; 
-          })
-          .style("fill", function(d) { return d.color || "black"; })
-          //.style("stroke", "orange")
-          //.style("stroke-width", "1px")
-          //.style("stroke-opacity", 0.8)
-          .style("fill-opacity", function(d) { return d.opacity || 1; });
+          .attr("x", function(_) { return Math.round(x(_.timestamp)); })
+          .attr("y", function(_) { return Math.round(y(_.sensorReading)); })
+          .attr("width", function() { return pixelsPerSecond; }) // d.sensorReading
+          .attr("height", function(_) { return (svgHeight - _.sensorReading); })
+          .style("fill", barColor)
+          .style("stroke", "orange")
+          .style("stroke-width", "1px")
+          .style("stroke-opacity", 0.5)
+          .style("fill-opacity", 1.0);
 
       // create update selection for the nav chart, by applying data
-      let updateSelNav = navG.selectAll("circle")
-          .data(data);
+      let updateSelNav = navG.selectAll(".bar").data(data);
 
       // remove items
       updateSelNav.exit().remove();
 
       // add items
-      updateSelNav.enter().append("circle")
-          .attr("r", 1)
-          .attr("fill", "black");
+      updateSelNav.enter()
+          .append(function() {
+            return (document.createElementNS("http://www.w3.org/2000/svg", "rect"));
+          })
+          .attr("class", "bar");
 
       // added items now part of update selection; set coordinates of points
       updateSelNav
-          .attr("cx", function(d) {
-            return Math.round(xNav(d.time));
-          })
-          .attr("cy", function(d) {
-            return yNav(d.category);
-          })
-    
+          //.attr("cx", function(_) { return Math.round(xNav(_.time)); })
+          //.attr("cy", function(_) { return Math.round(yNav(_.sensorReading)); })
+
+          .attr("x", function(_) { return Math.round(xNav(_.timestamp)); })
+          .attr("y", function(_) { return Math.round(yNav(_.sensorReading)); })
+          .attr("width", function() { return 5; }) // d.sensorReading
+          .attr("height", function(_) { return (_.sensorReading); })
+          .style("fill", barColor)
+          .style("stroke", "orange")
+          .style("stroke-width", "1px")
+          .style("stroke-opacity", 0.5)
+          .style("fill-opacity", 1.0);
+
     } // end refreshChart function
-
-    function getTagName(that) {
-      let tagName = d3.select(that).node().tagName;
-      return (tagName);
-    }
-
 
     // function to keep the chart "moving" through time (right to left) 
     setInterval(function() {
@@ -342,16 +304,15 @@ function initRealTimeChart() {
       // refresh svg
       refresh();
 
-    }, 200);
-
-    // end setInterval function
+    }, 0); // default 200
 
     return chart;
 
   }; // end chart function
 
-
-  // chart getters/setters
+  // --------------------------------------------------------------------------
+  // setters
+  // --------------------------------------------------------------------------
 
   // new data item (this most recent item will appear 
   // on the right side of the chart, and begin moving left)
@@ -360,35 +321,6 @@ function initRealTimeChart() {
     datum = _;
     data.push(datum);
     return chart;
-  };
-
-  // svg width
-  chart.width = function(_) {
-    if (arguments.length === 0) return svgWidth;
-    svgWidth = _;
-    return chart;
-  };
-
-  // svg height
-  chart.height = function(_) {
-    if (arguments.length === 0) return svgHeight;
-    svgHeight = _;
-    return chart;
-  };
-
-  // yItems (can be dynamically added after chart construction)
-  chart.yDomain = function(_) {
-    if (arguments.length === 0) return yDomain;
-    yDomain = _;
-    if (svg) {
-      // update the y ordinal scale
-      y = d3.scale.ordinal().domain(yDomain).rangeRoundPoints([height, 0], 1);
-      // update the y axis
-      yAxis.scale(y)(yAxisG);
-      // update the y ordinal scale for the nav chart
-      yNav = d3.scale.ordinal().domain(yDomain).rangeRoundPoints([heightNav, 0], 1);
-    }
-    return chart;       
   };
 
   // debug
