@@ -37,8 +37,7 @@ function dataGenerator() {
     setTimeout(function() {
         // if the real time data chart is paused, stop generating data until it's unpaused
         if (!halted) {
-            // create a new data item, with attributes changing dynamically with each iteration
-            // we are simulating sensor readings in range from [10, 100)
+            // create a new data item, simulating sensor readings in range from [10, 100)
             let timestamp = new Date();
             let sensorReading = Math.ceil(10 + (90 * Math.random()));
             let obj = {timestamp: timestamp, sensorReading: sensorReading};
@@ -50,8 +49,10 @@ function dataGenerator() {
             // send the datum to the chart
             chart.datum(obj);
         }
+
         // do forever
         dataGenerator();
+
     }, timeout);
 }
 
