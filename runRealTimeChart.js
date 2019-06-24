@@ -29,13 +29,14 @@ d3.select("#halt").on("change", function() {
 // ----------------------------------------------------------------------------
 
 // in a normal use case, real time data would arrive through the network or some other mechanism
-// the timeout units is milliseconds (1000 ms = 1 sec)
+// the timeout units is milliseconds (1000 ms = 1 sec), one new data point is sent to the real
+// time chart after every timeout
 let timeout = 1000;
 
 // define data generator
 function dataGenerator() {
     setTimeout(function() {
-        // if the real time data chart is paused, stop generating data until it's unpaused
+        // if the real time data chart is paused, stop generating data until it's un-paused
         if (!halted) {
             // create a new data item, simulating sensor readings in range from [10, 100)
             let timestamp = new Date();
