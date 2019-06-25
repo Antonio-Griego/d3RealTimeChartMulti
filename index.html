@@ -10,11 +10,7 @@
 
   <body>
 
-    <div style="max-width: 900px; max-height: 400px; padding: 10px">
-
-      <div class="well">
-        <h4>D3 Based Real Time Chart with Multiple Data Streams</h4>
-      </div>
+    <div style="max-width: 600px; max-height: 400px; padding: 10px">
 
       <input id="debug" type="checkbox" name="debug" value="debug" style="margin-bottom: 10px"/>
       <label for="debug">Debug</label>
@@ -23,6 +19,18 @@
       <label for="halt">Halt</label>
 
       <div id="viewDiv"></div>
+
+      <div>
+        <span style='font-size:50px; text-align: center; float:left; width: 50%'>
+          <label id="remLabel">0</label> &#956;rem/h
+        </span>
+      </div>
+
+      <div>
+        <span style='font-size:50px; text-align: center; float:right; width: 50%'>
+          N <label id="cpsLabel">0.0</label> cps
+        </span>
+      </div>
 
     </div>
 
