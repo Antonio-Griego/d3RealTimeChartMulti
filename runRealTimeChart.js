@@ -1,28 +1,14 @@
 'use strict';
 
 // ----------------------------------------------------------------------------
-// initialize the real time chart
+// configure the real time chart
 // ----------------------------------------------------------------------------
 
 // create the real time chart
-let chart = initRealTimeChart(),
-    debug = false,
-    halted = false;
+const chart = initRealTimeChart();
 
-// invoke the chart
+// invoke the real time chart
 d3.select("#viewDiv").append("div").attr("id", "chartDiv").call(chart);
-
-// event handler for debug checkbox
-d3.select("#debug").on("change", function() {
-    debug = d3.select(this).property("checked");
-    chart.debug(debug);
-});
-
-// event handler for halt checkbox
-d3.select("#halt").on("change", function() {
-    halted = d3.select(this).property("checked");
-    chart.halt(halted);
-});
 
 // ----------------------------------------------------------------------------
 // configure the data generator
@@ -31,24 +17,29 @@ d3.select("#halt").on("change", function() {
 // in a normal use case, real time data would arrive through the network or some other mechanism
 // the timeout units is milliseconds (1000 ms = 1 sec), one new data point is sent to the real
 // time chart after every timeout
-let timeout = 900;
+const timeout = 100;
 
 // define data generator
 function dataGenerator() {
+
     setTimeout(function() {
+
+        // control flags for debugging and testing, toggled with checkboxes
+        const debug = $("#debug").is(":checked");
+        const halted = $("#halt").is(":checked");
+
         // if the real time data chart is paused, stop generating data until it's un-paused
         if (!halted) {
-            // create a new data item, simulating sensor readings
-            let timestamp = new Date();
-            let sensorReading = Math.ceil(35 + (25 * Math.random()));
-            let obj = {timestamp: timestamp, sensorReading: sensorReading};
 
-            if (debug) {
-                console.log("obj: ", obj);
-            }
+            // generate simulated data
+            let obj = {
+                sensorReading: Math.ceil(50 + (15 * Math.random())),
+                index: 0
+            };
 
-            // send the datum to the chart
-            chart.datum(obj);
+            if (debug) console.log("simulated sensor reading: ", obj);
+
+            chart.insertData(obj);
         }
 
         // do forever
